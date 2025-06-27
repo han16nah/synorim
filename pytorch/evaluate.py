@@ -7,6 +7,7 @@ from utils import exp
 import numpy as np
 from tqdm import tqdm
 from dataset.base import DatasetSpec
+import pickle
 
 
 def visualize(test_result, data):
@@ -41,6 +42,29 @@ def visualize(test_result, data):
         o3d.visualization.draw([base_pcd, final_pcd, dest_pcd, corres_lineset])
 
 
+def write(test_result, data):
+    print(test_result.keys())
+    outdata = {}
+    outdata["pcs"] = [None for i in range(len(test_result.keys()))]
+    outdata["flows"] = {}
+    for i in range(len(test_result.keys())):
+        outdata["flows"][i] = {}
+        for j in range(len(test_result.keys())):
+            outdata["flows"][i][j] = None
+    for (view_i, view_j) in test_result.keys():
+        pc_i = data[DatasetSpec.PC][view_i][0].cpu().numpy()
+        outdata["pcs"][view_i] = pc_i
+        flow_ij = test_result[(view_i, view_j)].cpu().numpy()
+        outdata["flows"][view_i][view_j] = flow_ij
+
+        outfolder = Path("/mnt/sds-hd/sd23k005/Hannah/synorim/dataset/mpc-plants/result_pretrained_cape")
+        basename = Path(data[DatasetSpec.FILENAME][0]).stem
+
+    filename = outfolder / (basename + ".npz")
+    with open(Path(filename), "wb") as f:
+        pickle.dump(outdata, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def test_epoch():
     net_model.eval()
     net_model.hparams.is_training = False
@@ -54,6 +78,8 @@ def test_epoch():
 
         if args.visualize:
             visualize(test_result, data)
+        if args.write:
+            write(test_result, data)
 
         meter.append_loss(test_metric)
 
@@ -65,6 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('config', type=str, help='Path to the config file.')
     parser.add_argument('--device', type=str, choices=['cpu', 'cuda'], default='cuda', help='Device to run on.')
     parser.add_argument('--visualize', action='store_true', help='Whether or not to visualize.')
+    parser.add_argument('--write', action='store_true', help='Whether to write ASCII files or transformed point clouds.') 
     args = parser.parse_args()
 
     exp.seed_everything(0)

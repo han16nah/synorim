@@ -58,13 +58,20 @@ class Model(BaseModel):
             cur_pc0, cur_pc1 = batch[DS.PC][0][batch_idx], batch[DS.PC][1][batch_idx]
             cur_sel0, cur_sel1 = all_sels[batch_idx * 2 + 0], all_sels[batch_idx * 2 + 1]
             cur_gt0, cur_gt1 = batch[DS.FULL_FLOW][(0, 1)][batch_idx], batch[DS.FULL_FLOW][(1, 0)][batch_idx]
-            cur_mask0, cur_mask1 = batch[DS.FULL_MASK][(0, 1)][batch_idx], batch[DS.FULL_MASK][(1, 0)][batch_idx]
+            cur_mask0, cur_mask1 = batch[DS.FULL_MASK][(0, 1)][batch_idx].long(), batch[DS.FULL_MASK][(1, 0)][batch_idx].long()
             cur_feat0 = desc_output.features_at(batch_idx * 2 + 0)
             cur_feat1 = desc_output.features_at(batch_idx * 2 + 1)
             dist_mat = torch.cdist(cur_feat0, cur_feat1) / torch.maximum(
                 torch.tensor(np.float32(self.hparams.td_min), device=self.device), self.td)
             cur_pd0 = torch.softmax(-dist_mat, dim=1) @ cur_pc1[cur_sel1] - cur_pc0[cur_sel0]
             cur_pd1 = torch.softmax(-dist_mat, dim=0).transpose(-1, -2) @ cur_pc0[cur_sel0] - cur_pc1[cur_sel1]
+            #print(f"cur_gt0: {cur_gt0.shape}")
+            #print(f"cur_sel0: {cur_sel0.shape}")
+            #print(f"cur_mask0: {cur_mask0[cur_sel0].shape}")
+            #print(f"linalg.norm: {torch.linalg.norm(cur_pd0 - cur_gt0[cur_sel0], dim=-1).shape}")
+            #print(f"cur_pd0: {cur_pd0.shape}")
+            #print(f"cur_gt0: {cur_gt0.shape}")
+            #print(f"cur_mask0: {cur_mask0.shape}")
             if cur_gt0 is not None:
                 flow_loss01 = torch.linalg.norm(cur_pd0 - cur_gt0[cur_sel0], dim=-1)[cur_mask0[cur_sel0]].mean()
                 all_flow_loss.append(flow_loss01)

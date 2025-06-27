@@ -182,6 +182,7 @@ class Model(BaseModel):
         # Measure errors.
         full_final_flows = self.propagte_to_full_flow(batch, final_flows)
         error = self.evaluate_flow_error(batch, full_final_flows)
+        #error = {}
 
         return full_final_flows, error
 
@@ -215,10 +216,11 @@ class Model(BaseModel):
             if gt_flow_ij is None:
                 continue
 
-            err_dict = PairwiseFlowMetric(compute_epe3d=True, compute_acc3d_outlier=True).evaluate(
+            err_dict = PairwiseFlowMetric(batch_mean=True, compute_epe3d=True, compute_acc3d_outlier=True).evaluate(
                 gt_flow_ij, pd_flows[(view_i, view_j)], valid_mask=gt_mask_ij)
-            err_full_dict = PairwiseFlowMetric(compute_epe3d=True, compute_acc3d_outlier=True).evaluate(
+            err_full_dict = PairwiseFlowMetric(batch_mean=True, compute_epe3d=True, compute_acc3d_outlier=True).evaluate(
                 gt_flow_ij, pd_flows[(view_i, view_j)])
+
 
             err_dict = {k: v.item() for k, v in err_dict.items()}
             err_full_dict = {k: v.item() for k, v in err_full_dict.items()}
@@ -238,5 +240,6 @@ class Model(BaseModel):
 
     def test_dataloader(self):
         test_set = FlowDataset(**self.hparams.test_kwargs, spec=[
-            DS.FILENAME, DS.QUANTIZED_COORDS, DS.PC, DS.FULL_FLOW, DS.FULL_MASK], hparams=self.hparams)
-        return DataLoader(test_set, batch_size=1, shuffle=False, num_workers=4, collate_fn=list_collate)
+            DS.FILENAME, DS.QUANTIZED_COORDS, DS.PC, DS.FULL_FLOW, DS.FULL_MASK
+            ], hparams=self.hparams)
+        return DataLoader(test_set, batch_size=1, shuffle=False, num_workers=1, collate_fn=list_collate)

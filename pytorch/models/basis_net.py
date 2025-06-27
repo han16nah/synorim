@@ -83,7 +83,7 @@ class Model(BaseModel):
         warpped_pc0 = pc0 + flow01
         dist_mat = torch.cdist(warpped_pc0, pc1)       # (B, M, M)
         min_idx = torch.argmin(dist_mat, dim=-1)     # (B, M), (B, M)
-        id0_mask = mask0
+        id0_mask = mask0.long()
         id1_mask = min_idx[id0_mask]
         return basis0[id0_mask], basis1[id1_mask]
 

@@ -194,7 +194,7 @@ class FlowDataset(RandomSafeDataset):
         if DatasetSpec.QUANTIZED_COORDS in self.spec:
             quan_coords = []
             for cur_pc in ret_vals[DatasetSpec.PC]:
-                coords = np.floor(cur_pc / self.hparams.voxel_size)
+                coords = np.ascontiguousarray(np.floor(cur_pc / self.hparams.voxel_size))
                 inds = ME.utils.sparse_quantize(coords, return_index=True, return_maps_only=True)
                 quan_coords.append((coords[inds], inds))
             ret_vals[DatasetSpec.QUANTIZED_COORDS] = quan_coords
