@@ -185,7 +185,8 @@ class Model(BaseModel):
             if k_i is None or k_j is None or sqrt_mu == 0.0:
                 # No kron or vec needed because without mu the expression can be simplified.
                 # On GPU, inverse(ATA) is way faster -- however, it is not accurate which makes the algorithm diverge
-                c_current = torch.pinverse(s_ita, rcond=1e-4) @ s_phi
+                # c_current = torch.pinverse(s_ita, rcond=1e-4) @ s_phi
+                c_current = torch.linalg.lstsq(s_ita, s_phi, rcond=1e-4).solution
             else:
                 s_A = k_i * sqrt_mu
                 s_B = k_j * sqrt_mu
