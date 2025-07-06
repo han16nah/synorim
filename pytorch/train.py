@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from utils import exp
 
+import wandb
 
 def train_epoch():
     global global_step
@@ -53,8 +54,10 @@ def validate_epoch():
 
     model_state = {
         'state_dict': net_model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
         'epoch': epoch_idx, 'val_loss': metric_val
     }
+    wandb.log(model_state)
 
     if metric_val < metric_val_best:
         metric_val_best = metric_val
@@ -72,6 +75,10 @@ if __name__ == '__main__':
     exp.seed_everything(0)
 
     model_args = exp.parse_config_yaml(Path(args.config))
+    run = wandb.init(
+        project="synorim_plants",
+        config=OmegaConf.to_container(model_args, resolve=True)
+    )
     net_module = importlib.import_module("models." + model_args.model).Model
     net_model = net_module(model_args)
 
