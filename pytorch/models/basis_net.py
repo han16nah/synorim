@@ -83,7 +83,7 @@ class Model(BaseModel):
         warpped_pc0 = pc0 + flow01
         dist_mat = torch.cdist(warpped_pc0, pc1)       # (B, M, M)
         min_idx = torch.argmin(dist_mat, dim=-1)     # (B, M), (B, M)
-        id0_mask = mask0.long()
+        id0_mask = mask0
         id1_mask = min_idx[id0_mask]
         return basis0[id0_mask], basis1[id1_mask]
 
@@ -185,8 +185,8 @@ class Model(BaseModel):
             if k_i is None or k_j is None or sqrt_mu == 0.0:
                 # No kron or vec needed because without mu the expression can be simplified.
                 # On GPU, inverse(ATA) is way faster -- however, it is not accurate which makes the algorithm diverge
-                # c_current = torch.pinverse(s_ita, rcond=1e-4) @ s_phi
-                c_current = torch.linalg.lstsq(s_ita, s_phi, rcond=1e-4).solution
+                c_current = torch.pinverse(s_ita, rcond=1e-4) @ s_phi
+                # c_current = torch.linalg.lstsq(s_ita, s_phi, rcond=1e-4).solution
             else:
                 s_A = k_i * sqrt_mu
                 s_B = k_j * sqrt_mu
