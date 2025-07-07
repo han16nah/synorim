@@ -18,7 +18,7 @@ from ray import tune, train
 from ray.air.integrations.wandb import WandbLoggerCallback
 
 
-def train_epoch():
+def train_epoch(net_model, train_loader, optimizer, scheduler, writer):
     global global_step
     # Initialize wandb
     wandb = setup_wandb(net_model.hparams)
@@ -45,7 +45,7 @@ def train_epoch():
         global_step += 1
 
 
-def validate_epoch():
+def validate_epoch(net_model, val_loader, optimizer, writer, epoch_idx):
     global metric_val_best
 
     net_model.eval()
@@ -75,43 +75,8 @@ def validate_epoch():
 
 def train_example(config_tunable):
     # Train and validate within a protected loop.
-    global_step = 0
-    metric_val_best = 1e6
-    try:
-        for epoch_idx in range(100):
-            # update net_module.hparams with the values from config_tunable
-            for key, value in config_tunable.items():
-                setattr(net_model.hparams, key, value)
-            train_epoch()
-            validate_epoch()
-    except Exception as ex:
-        if not isinstance(ex, bdb.BdbQuit):
-            traceback.print_exc()
-            pdb.post_mortem(ex.__traceback__)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Synorim Training script')
-    parser.add_argument('config', type=str, help='Path to the config file.')
-    parser.add_argument('--device', type=str, choices=['cpu', 'cuda'], default='cuda', help='Device to run on.')
-    parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train.')
-    args = parser.parse_args()
-
-    exp.seed_everything(0)
-
-    model_args = exp.parse_config_yaml(Path(args.config))
     net_module = importlib.import_module("models." + model_args.model).Model
     net_model = net_module(model_args)
-
-    config_tunable = {
-        "voxel_size": tune.grid_search(model_args.voxel_size),
-        "gt_align_prob": tune.grid_search(model_args.gt_align_prob),
-        "ctc_weight": tune.grid_search(model_args.ctc_weight),
-        "smoothness_weight": tune.grid_search(model_args.smoothness_weight),
-        "n_match_th": tune.grid_search(model_args.n_match_th),
-    }
-
-    train_log_dir = Path("out") / model_args.name
-    train_log_dir.mkdir(exist_ok=True, parents=True)
 
     print(" >>>> ======= MODEL HYPER-PARAMETERS ======= <<<< ")
     print(OmegaConf.to_yaml(net_model.hparams, resolve=True))
@@ -142,6 +107,42 @@ if __name__ == '__main__':
     args.device = torch.device(args.device)
     net_model = exp.to_target_device(net_model, args.device)
     net_model.device = args.device
+
+    global_step = 0
+    metric_val_best = 1e6
+    try:
+        for epoch_idx in range(100):
+            # update net_module.hparams with the values from config_tunable
+            for key, value in config_tunable.items():
+                setattr(net_model.hparams, key, value)
+            train_epoch(net_model, train_loader, optimizer, scheduler, writer)
+            validate_epoch(net_model, val_loader, optimizer, writer, epoch_idx)
+    except Exception as ex:
+        if not isinstance(ex, bdb.BdbQuit):
+            traceback.print_exc()
+            pdb.post_mortem(ex.__traceback__)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Synorim Training script')
+    parser.add_argument('config', type=str, help='Path to the config file.')
+    parser.add_argument('--device', type=str, choices=['cpu', 'cuda'], default='cuda', help='Device to run on.')
+    parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train.')
+    args = parser.parse_args()
+
+    exp.seed_everything(0)
+
+    model_args = exp.parse_config_yaml(Path(args.config))
+
+    config_tunable = {
+        "voxel_size": tune.grid_search(model_args.voxel_size),
+        "gt_align_prob": tune.grid_search(model_args.gt_align_prob),
+        "ctc_weight": tune.grid_search(model_args.ctc_weight),
+        "smoothness_weight": tune.grid_search(model_args.smoothness_weight),
+        "n_match_th": tune.grid_search(model_args.n_match_th),
+    }
+
+    train_log_dir = Path("out") / model_args.name
+    train_log_dir.mkdir(exist_ok=True, parents=True)
 
     tuner = tune.Tuner(
         train_example,
