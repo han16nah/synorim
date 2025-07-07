@@ -134,12 +134,16 @@ if __name__ == '__main__':
     model_args = exp.parse_config_yaml(Path(args.config))
 
     config_tunable = {
-        "voxel_size": tune.grid_search(model_args.voxel_size),
+        "voxel_size": tune.grid_search(model_args.voxel_size)
+    }
+
+    if model_args.model == "basis_net":
+        config_tunable.update({
         "gt_align_prob": tune.grid_search(model_args.gt_align_prob),
         "ctc_weight": tune.grid_search(model_args.ctc_weight),
         "smoothness_weight": tune.grid_search(model_args.smoothness_weight),
         "n_match_th": tune.grid_search(model_args.n_match_th),
-    }
+    })
 
     train_log_dir = Path("out") / model_args.name
     train_log_dir.mkdir(exist_ok=True, parents=True)
