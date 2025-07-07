@@ -146,7 +146,11 @@ if __name__ == '__main__':
     tuner = tune.Tuner(
         train_example,
         param_space=config_tunable,
-        run_config=tune.RunConfig(
+        tune_config=tune.TuneConfig(
+            metric="loss",
+            mode="min",
+        ),
+        run_config=train.RunConfig(
             callbacks=[WandbLoggerCallback(project="synorim")]
         )
 )
