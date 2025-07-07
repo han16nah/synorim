@@ -8,13 +8,13 @@ model: 'basis_net'
 batch_size: 2
 
 # Quantization size of sparse convolution network
-voxel_size: 0.01
+voxel_size: [0.05, 0.01]
 
 # Path to the trained descriptor network
 desc_checkpoint: "out/cape/desc/best.pth"
 
 # Probability of using ground-truth correspondences rather than predicted
-gt_align_prob: 0.5
+gt_align_prob: [0.2, 0.5]
 
 # Number of basis functions
 n_basis: 24
@@ -30,18 +30,18 @@ refine_args:
   tr_channels: [-1, 64, 64]
 
 # Consistency loss (Equ.11) weight
-ctc_weight: 0.005
+ctc_weight: [0.0025, 0.005]
 # The following losses are found to improve training stability.
 #   Empirically for a fully converged model they will NOT
 # affect performance a lot.
 flow_f_weight: 0.1        # Regularize F^f
-smoothness_weight: 5.0    # Smoothness loss L_smooth
+smoothness_weight: [2.0, 5.0]    # Smoothness loss L_smooth
 
 # We eliminate large F^f caused by numerical instability.
 flow_f_max_bound: 1.0
 
 # Matches count threshold when using g_pd, during training.
-n_match_th: 64
+n_match_th: [64, 128]
 
 # Type of robust kernel. Only huber is supported.
 robust_kernel:
