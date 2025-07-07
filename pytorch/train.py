@@ -14,9 +14,14 @@ from tqdm import tqdm
 from utils import exp
 
 import wandb
+from ray import tune, train
+from ray.air.integrations.wandb import WandbLoggerCallback
+
 
 def train_epoch():
     global global_step
+    # Initialize wandb
+    wandb = setup_wandb(net_model.hparams)
 
     net_model.train()
     net_model.hparams.is_training = True
@@ -31,7 +36,10 @@ def train_epoch():
         optimizer.step()
         scheduler.step()
         net_model.log('learning_rate', scheduler.get_last_lr()[0])
+        wandb.log({"learning_rate": scheduler.get_last_lr()[0]})
         pbar.set_postfix_str(f"Loss = {loss.item():.2f}")
+        wandb.log({"train_loss": loss.item()})
+        tune.report(train_loss=loss.item(), global_step=global_step)
 
         net_model.write_log(writer, global_step)
         global_step += 1
@@ -65,6 +73,22 @@ def validate_epoch():
     torch.save(model_state, train_log_dir / f"newest.pth")
 
 
+def train_example(config_tunable):
+    # Train and validate within a protected loop.
+    global_step = 0
+    metric_val_best = 1e6
+    try:
+        for epoch_idx in range(100):
+            # update net_module.hparams with the values from config_tunable
+            for key, value in config_tunable.items():
+                setattr(net_model.hparams, key, value)
+            train_epoch()
+            validate_epoch()
+    except Exception as ex:
+        if not isinstance(ex, bdb.BdbQuit):
+            traceback.print_exc()
+            pdb.post_mortem(ex.__traceback__)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Synorim Training script')
     parser.add_argument('config', type=str, help='Path to the config file.')
@@ -75,12 +99,16 @@ if __name__ == '__main__':
     exp.seed_everything(0)
 
     model_args = exp.parse_config_yaml(Path(args.config))
-    run = wandb.init(
-        project="synorim_plants",
-        config=OmegaConf.to_container(model_args, resolve=True)
-    )
     net_module = importlib.import_module("models." + model_args.model).Model
     net_model = net_module(model_args)
+
+    config_tunable = {
+        "voxel_size": tune.grid_search(model_args.voxel_size),
+        "gt_align_prob": tune.grid_search(model_args.gt_align_prob),
+        "ctc_weight": tune.grid_search(model_args.ctc_weight),
+        "smoothness_weight": tune.grid_search(model_args.smoothness_weight),
+        "n_match_th": tune.grid_search(model_args.n_match_th),
+    }
 
     train_log_dir = Path("out") / model_args.name
     train_log_dir.mkdir(exist_ok=True, parents=True)
@@ -115,14 +143,11 @@ if __name__ == '__main__':
     net_model = exp.to_target_device(net_model, args.device)
     net_model.device = args.device
 
-    # Train and validate within a protected loop.
-    global_step = 0
-    metric_val_best = 1e6
-    try:
-        for epoch_idx in range(args.epochs):
-            train_epoch()
-            validate_epoch()
-    except Exception as ex:
-        if not isinstance(ex, bdb.BdbQuit):
-            traceback.print_exc()
-            pdb.post_mortem(ex.__traceback__)
+    tuner = tune.Tuner(
+        train_example,
+        param_space=config_tunable,
+        run_config=tune.RunConfig(
+            callbacks=[WandbLoggerCallback(project="synorim")]
+        )
+)
+    tuner.fit()
