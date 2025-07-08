@@ -7,6 +7,7 @@ import traceback
 from pathlib import Path
 
 import torch
+import omegaconf
 from omegaconf import OmegaConf
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -14,6 +15,7 @@ from tqdm import tqdm
 from utils import exp
 
 import wandb
+import ray
 from ray import tune, train
 from ray.air.integrations.wandb import WandbLoggerCallback
 
@@ -84,7 +86,7 @@ def train_example(config_tunable):
     print(" >>>> ====================================== <<<< ")
 
     # Copy the model definition and config.
-    shutil.copy(f"models/{model_args.model.replace('.', '/')}.py", train_log_dir / "model.py")
+    shutil.copy(f"{model_dir}/{model_args.model.replace('.', '/')}.py", train_log_dir / "model.py")
     OmegaConf.save(model_args, train_log_dir / "config.yaml")
 
     # Load dataset
@@ -132,6 +134,11 @@ if __name__ == '__main__':
     exp.seed_everything(0)
 
     model_args = exp.parse_config_yaml(Path(args.config))
+    # make checkpoint path absolute
+    try:
+        model_args.desc_checkpoint = Path(model_args.desc_checkpoint).expanduser().resolve().as_posix()
+    except (KeyError, omegaconf.errors.ConfigAttributeError):
+        pass
 
     config_tunable = {
         "voxel_size": tune.grid_search(model_args.voxel_size)
@@ -145,11 +152,16 @@ if __name__ == '__main__':
         "n_match_th": tune.grid_search(model_args.n_match_th),
     })
 
-    train_log_dir = Path("out") / model_args.name
+    train_log_dir = Path("/mnt/sds-hd/sd23k005/Hannah/synorim/out") / model_args.name
     train_log_dir.mkdir(exist_ok=True, parents=True)
+    model_dir = (Path.cwd() / "models").as_posix()
 
+    ray.init(_temp_dir="/gpfs/bwfor/home/hd/hd_hd/hd_wq452/tmp/ray")
     tuner = tune.Tuner(
-        train_example,
+        tune.with_resources(
+            tune.with_parameters(train_example),
+            resources={"cpu": 1, "gpu": 1}
+        ),
         param_space=config_tunable,
         run_config=train.RunConfig(
             callbacks=[WandbLoggerCallback(project="synorim")]
