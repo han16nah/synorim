@@ -137,6 +137,7 @@ if __name__ == '__main__':
     # make checkpoint path absolute
     try:
         model_args.desc_checkpoint = Path(model_args.desc_checkpoint).expanduser().resolve().as_posix()
+        model_args.base_folder = Path(model_args.base_folder).expanduser().resolve().as_posix()
     except (KeyError, omegaconf.errors.ConfigAttributeError):
         pass
 
