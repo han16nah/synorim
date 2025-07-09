@@ -139,9 +139,9 @@ if __name__ == '__main__':
         model_args.desc_checkpoint = Path(model_args.desc_checkpoint).expanduser().resolve().as_posix()
     except (KeyError, omegaconf.errors.ConfigAttributeError):
         pass
-    print(model_args)
     try:
         model_args.train_kwargs.base_folder = Path(model_args.train_kwargs.base_folder).expanduser().resolve().as_posix()
+        model_args.val_kwargs.base_folder = Path(model_args.val_kwargs.base_folder).expanduser().resolve().as_posix()
     except (KeyError, omegaconf.errors.ConfigAttributeError) as e:
         print("Could not write base_folder to absolute path.")
         print(e)
