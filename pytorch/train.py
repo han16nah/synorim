@@ -17,7 +17,7 @@ from utils import exp
 import wandb
 import ray
 from ray import tune, train
-from ray.air.integrations.wandb import WandbLoggerCallback
+from ray.air.integrations.wandb import WandbLoggerCallback, setup_wandb
 
 
 def train_epoch(net_model, train_loader, optimizer, scheduler, writer):
