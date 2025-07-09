@@ -23,8 +23,7 @@ from ray.air.integrations.wandb import WandbLoggerCallback, setup_wandb
 def train_epoch(net_model, train_loader, optimizer, scheduler, writer):
     global global_step
     # Initialize wandb
-    wandb = setup_wandb(net_model.hparams)
-
+    #wandb = setup_wandb(net_model.hparams)
     net_model.train()
     net_model.hparams.is_training = True
 
@@ -37,11 +36,12 @@ def train_epoch(net_model, train_loader, optimizer, scheduler, writer):
         net_model.on_after_backward()
         optimizer.step()
         scheduler.step()
+        #metrics = {"train_loss": loss.item(), "global_step": global_step}
         net_model.log('learning_rate', scheduler.get_last_lr()[0])
-        wandb.log({"learning_rate": scheduler.get_last_lr()[0]})
+        #wandb.log({"learning_rate": scheduler.get_last_lr()[0]})
         pbar.set_postfix_str(f"Loss = {loss.item():.2f}")
-        wandb.log({"train_loss": loss.item()})
-        tune.report(train_loss=loss.item(), global_step=global_step)
+        #wandb.log({"train_loss": loss.item()})
+        train.report({"train_loss": loss.item(), "global_step": global_step})
 
         net_model.write_log(writer, global_step)
         global_step += 1
@@ -110,8 +110,6 @@ def train_example(config_tunable):
     net_model = exp.to_target_device(net_model, args.device)
     net_model.device = args.device
 
-    global_step = 0
-    metric_val_best = 1e6
     try:
         for epoch_idx in range(100):
             # update net_module.hparams with the values from config_tunable
@@ -145,7 +143,6 @@ if __name__ == '__main__':
     except (KeyError, omegaconf.errors.ConfigAttributeError) as e:
         print("Could not write base_folder to absolute path.")
         print(e)
-        
 
     config_tunable = {
         "voxel_size": tune.grid_search(model_args.voxel_size)
@@ -163,6 +160,8 @@ if __name__ == '__main__':
     train_log_dir.mkdir(exist_ok=True, parents=True)
     model_dir = (Path.cwd() / "models").as_posix()
 
+    global_step = 0
+    metric_val_best = 1e6
     ray.init(_temp_dir="/gpfs/bwfor/home/hd/hd_hd/hd_wq452/tmp/ray")
     tuner = tune.Tuner(
         tune.with_resources(
