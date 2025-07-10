@@ -166,7 +166,7 @@ if __name__ == '__main__':
         "n_match_th": tune.grid_search(model_args.n_match_th),
     })
 
-    train_log_dir = Path("/mnt/sds-hd/sd23k005/Hannah/synorim/out") / model_args.name
+    train_log_dir = Path().resolve() / "out" / model_args.name
     train_log_dir.mkdir(exist_ok=True, parents=True)
     model_dir = (Path.cwd() / "models").as_posix()
 
