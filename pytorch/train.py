@@ -39,7 +39,7 @@ def train_epoch(net_model, train_loader, optimizer, scheduler, writer):
         wandb.log({"learning_rate": scheduler.get_last_lr()[0]})
         pbar.set_postfix_str(f"Loss = {loss.item():.2f}")
         wandb.log({"train_loss": loss.item()})
-        train.report({"train_loss": loss.item(), "global_step": global_step})
+        train.report({"learning_rate": scheduler.get_last_lr()[0] ,"train_loss": loss.item(), "global_step": global_step})
 
         net_model.write_log(writer, global_step)
         global_step += 1
@@ -74,6 +74,11 @@ def validate_epoch(net_model, val_loader, optimizer, writer, epoch_idx):
 
 
 def train_example(config_tunable):
+    # Initialize wandb here (per trial)
+    wandb.init(
+        project="synorim",
+        config=config_tunable,
+        reinit=True)
 
     # Train and validate within a protected loop.
     net_module = importlib.import_module("models." + model_args.model).Model
@@ -114,7 +119,6 @@ def train_example(config_tunable):
             setattr(net_model.hparams, key, value)
     except:
         pass
-    wandb = setup_wandb(net_model.hparams, project="synorim")
 
     try:
         for epoch_idx in range(100):
@@ -124,6 +128,9 @@ def train_example(config_tunable):
         if not isinstance(ex, bdb.BdbQuit):
             traceback.print_exc()
             pdb.post_mortem(ex.__traceback__)
+
+    wandb.finish()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Synorim Training script')
