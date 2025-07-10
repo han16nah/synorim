@@ -74,8 +74,6 @@ def validate_epoch(net_model, val_loader, optimizer, writer, epoch_idx):
 
 
 def train_example(config_tunable):
-    # Initialize wandb
-    wandb = setup_wandb(net_model.hparams, project="synorim")
 
     # Train and validate within a protected loop.
     net_module = importlib.import_module("models." + model_args.model).Model
@@ -114,9 +112,9 @@ def train_example(config_tunable):
     try:
         for key, value in config_tunable.items():
             setattr(net_model.hparams, key, value)
-    wandb = setup_wandb(ned_model.hparams, project="synorim")
     except:
         pass
+    wandb = setup_wandb(net_model.hparams, project="synorim")
 
     try:
         for epoch_idx in range(100):
