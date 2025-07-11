@@ -44,11 +44,11 @@ def visualize(test_result, data):
 
 def write(test_result, data):
     print(test_result.keys())
-    outdata = {}
-    outdata["pcs"] = [None for i in range(len(test_result.keys()[0]))]
-    outdata["flows"] = {}
     views_i = [i for (i, j) in test_result.keys()]
     views_j = [j for (i, j) in test_result.keys()]
+    outdata = {}
+    outdata["pcs"] = [None for i in range(view_i)]
+    outdata["flows"] = {}
     for i in views_i:
         outdata["flows"][i] = {}
         for j in views_j:
