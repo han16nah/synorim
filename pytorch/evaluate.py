@@ -47,9 +47,9 @@ def write(test_result, data):
     outdata = {}
     outdata["pcs"] = [None for i in range(len(test_result.keys()))]
     outdata["flows"] = {}
-    for i in range(len(test_result.keys())):
+    for i in range(len(test_result.keys()[0])):
         outdata["flows"][i] = {}
-        for j in range(len(test_result.keys())):
+        for j in range(len(test_result.keys()[1])):
             outdata["flows"][i][j] = None
     for (view_i, view_j) in test_result.keys():
         pc_i = data[DatasetSpec.PC][view_i][0].cpu().numpy()
