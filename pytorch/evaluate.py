@@ -45,7 +45,7 @@ def visualize(test_result, data):
 def write(test_result, data):
     print(test_result.keys())
     outdata = {}
-    outdata["pcs"] = [None for i in range(len(test_result.keys()))]
+    outdata["pcs"] = [None for i in range(len(test_result.keys()[0]))]
     outdata["flows"] = {}
     for i in range(len(test_result.keys()[0])):
         outdata["flows"][i] = {}
