@@ -57,7 +57,7 @@ def write(test_result, data):
         flow_ij = test_result[(view_i, view_j)].cpu().numpy()
         outdata["flows"][view_i][view_j] = flow_ij
 
-        outfolder = Path("/mnt/sds-hd/sd23k005/Hannah/synorim/dataset/mpc-plants/result")
+        outfolder = Path("/mnt/sds-hd/sd23k005/Hannah/synorim/dataset/mpc-plants/result_S0")
         basename = Path(data[DatasetSpec.FILENAME][0]).stem
 
     filename = outfolder / (basename + ".npz")
