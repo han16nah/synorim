@@ -21,6 +21,10 @@ class Model(BaseModel):
         self.basis_net = self.load_module(self.hparams.basis_checkpoint)
         self.desc_net = self.basis_net.desc_net
         self.hparams.voxel_size = self.basis_net.hparams.voxel_size
+        try:
+            float(self.hparams.voxel_size)
+        except TypeError:
+            self.hparams.voxel_size = self.hparams.voxel_size[0]
 
     def update_device(self):
         self.basis_net.device = self.device
