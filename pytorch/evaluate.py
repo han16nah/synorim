@@ -47,7 +47,7 @@ def write(test_result, data):
     views_i = np.unique([i for (i, j) in test_result.keys()])
     views_j = np.unique([j for (i, j) in test_result.keys()])
     outdata = {}
-    outdata["pcs"] = [None for i in range(views_i)]
+    outdata["pcs"] = [None for i in range(len(views_i))]
     outdata["flows"] = {}
     for i in views_i:
         outdata["flows"][i] = {}
