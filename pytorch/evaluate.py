@@ -44,10 +44,10 @@ def visualize(test_result, data):
 
 def write(test_result, data):
     print(test_result.keys())
-    views_i = [i for (i, j) in test_result.keys()]
-    views_j = [j for (i, j) in test_result.keys()]
+    views_i = np.unique([i for (i, j) in test_result.keys()])
+    views_j = np.unique([j for (i, j) in test_result.keys()])
     outdata = {}
-    outdata["pcs"] = [None for i in range(view_i)]
+    outdata["pcs"] = [None for i in range(views_i)]
     outdata["flows"] = {}
     for i in views_i:
         outdata["flows"][i] = {}
